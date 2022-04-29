@@ -26,6 +26,7 @@ async function run() {
         const posDB = client.db('pos');
         const userCollection = posDB.collection('users');
         const productCollection = posDB.collection('products');
+        const saleCollection = posDB.collection('sales');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -107,6 +108,15 @@ async function run() {
             res.send(product);
         });
 
+        app.get('/productCount',async (req,res)=>{
+            const query = {};
+            const cursor = productCollection.find(query);
+            const count = await cursor.count();
+
+            res.json(count);
+        })
+
+
          /**
          *  R - read 
          * One product
@@ -136,14 +146,6 @@ async function run() {
             res.send(result);
         });
 
-        // create product
-        app.post('/product', async (req, res) => {
-            const product = req.body;
-            console.log('create new product', product);
-            const result = await productCollection.insertOne(product);
-            res.send(result);
-        })
-
 
         // delete product
         app.delete('/product/:id', async (req, res) => {
@@ -151,8 +153,74 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const result = await productCollection.deleteOne(query);
             res.send(result);
-        })
+        });
 
+
+        /**
+         * SALES CRUD API
+         * C - Create Products
+         * R - read products
+         * U - Update products
+         * D - Delete Products
+         */
+
+        //  * C - Create Sale
+        app.post('/sale', async (req, res) => {
+            const sale = req.body;
+            console.log('create new Sale', sale);
+            const result = await saleCollection.insertOne(sale);
+            res.send(result);
+        })
+        
+
+        /**
+         *  R - read 
+         * All Sales
+         * */
+        app.get('/sale', async (req, res) => {
+            const query = {};
+            const cursor = saleCollection.find(query);
+            const sale = await cursor.toArray();
+            res.send(sale);
+        });
+
+         /**
+         *  R - read 
+         * One sale
+         * */
+          app.get("/sale/:id", async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+
+            const sale = await saleCollection.findOne(query);
+            res.send(sale);
+        });
+
+
+        // U - Update sale
+        app.put('/sale/:id', async(req,res)=>{
+            const id = req.params.id;
+            const sale = req.body;
+            const filter = {_id: ObjectId(id)};
+
+            const updateSale = {
+                $set: sale
+            }
+            
+            const option = {upsert:true};
+
+            const result = await saleCollection.updateOne(filter, updateSale, option);
+            res.send(result);
+        });
+
+
+        // delete sale
+        app.delete('/sale/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await saleCollection.deleteOne(query);
+            res.send(result);
+        });
 
 
     }
