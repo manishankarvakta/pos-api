@@ -20,13 +20,13 @@ const ObjectId = require('mongodb').ObjectId;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rfbl8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-const secret = "randomStringForCreateAPasswordHash";
-const passHash = pass =>{
-    const password = sha256({pass, secret})
-    return password;
-}
+// const secret = "randomStringForCreateAPasswordHash";
+// const passHash = pass =>{
+//     const password = sha256({pass, secret})
+//     return password;
+// }
 
-console.log(passHash('Hello'));
+// console.log(passHash('Hello'))
 
 async function run() {
     try {
@@ -130,8 +130,6 @@ async function run() {
             res.send(product);
         });
 
-
-
         app.get('/productCount',async (req,res)=>{
             const query = {};
             const cursor = productCollection.find(query);
@@ -152,17 +150,6 @@ async function run() {
             const product = await productCollection.findOne(query);
             res.send(product);
         });
-
-        
-        // get lsit of products
-        app.get("/products", async(req, res)=>{
-            const productIds = req.body;
-            const query = {_id:  {'$in':productIds }};//ObjectId(id)};
-            
-
-            const product = await productCollection.find(query);
-            res.send(product);
-        })
 
 
         // U - Update products
