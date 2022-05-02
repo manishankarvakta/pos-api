@@ -36,6 +36,7 @@ async function run() {
         const userCollection = posDB.collection('users');
         const productCollection = posDB.collection('products');
         const saleCollection = posDB.collection('sales');
+        const categoryCollection = posDB.collection('categories');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -243,6 +244,64 @@ async function run() {
             const result = await saleCollection.deleteOne(query);
             res.send(result);
         });
+
+
+
+        /**
+         * Master Category
+         * Category
+         */
+         // get All category
+         app.get('/category', async (req, res) => {
+            const query = {};
+            const cursor = categoryCollection.find(query);
+            const category = await cursor.toArray();
+            res.send(category);
+        });
+
+        // get One category
+        app.get("/category/:id", async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+
+            const category = await categoryCollection.findOne(query);
+            res.send(category);
+        });
+
+
+        // update / put category
+        app.put('/category/:id', async(req,res)=>{
+            const id = req.params.id;
+            const category = req.body;
+            const filter = {_id: ObjectId(id)};
+
+            const updateCategory = {
+                $set: category
+            }
+            
+            const option = {upsert:true};
+
+            const result = await categoryCollection.updateOne(filter, updateCategory, option);
+            res.send(result);
+        })
+
+        // create category
+        app.post('/category', async (req, res) => {
+            const category = req.body;
+            console.log('create new category', category);
+            const result = await categoryCollection.insertOne(category);
+            res.send(result.insertedId);
+        })
+
+
+        // delete category
+        app.delete('/category/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await categoryCollection.deleteOne(query);
+            res.send(result);
+        })
+
 
 
     }
