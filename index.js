@@ -121,7 +121,6 @@ async function run() {
             
             const query = {};
             const cursor = productCollection.find(query);
-            let products;
             if(page || size){
                 product = await cursor.skip(page*size).limit(size).toArray();
             }
@@ -253,11 +252,29 @@ async function run() {
          */
          // get All category
          app.get('/category', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            
             const query = {};
             const cursor = categoryCollection.find(query);
-            const category = await cursor.toArray();
+            if(page || size){
+                category = await cursor.skip(page*size).limit(size).toArray();
+            }
+            else{
+                category = await cursor.toArray();
+            }
             res.send(category);
         });
+
+        // categoryCount
+        app.get('/categoryCount',async (req,res)=>{
+            const query = {};
+            const cursor = categoryCollection.find(query);
+            const count = await cursor.count();
+
+            res.send({count});
+        })
+
 
         // get One category
         app.get("/category/:id", async(req,res)=>{
