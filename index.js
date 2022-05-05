@@ -268,9 +268,7 @@ async function run() {
 
         // categoryCount
         app.get('/categoryCount',async (req,res)=>{
-            const query = {};
-            const cursor = categoryCollection.find(query);
-            const count = await cursor.count();
+            const count = await categoryCollection.estimatedDocumentCount();
 
             res.send({count});
         })
