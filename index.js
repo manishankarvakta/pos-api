@@ -57,6 +57,7 @@ async function run() {
         const productCollection = posDB.collection('products');
         const saleCollection = posDB.collection('sales');
         const categoryCollection = posDB.collection('categories');
+        const customerCollection = posDB.collection('customer');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -120,7 +121,7 @@ async function run() {
                 res.send({
                     success: true,
                     accessToken: accessToken,
-                    user: {email: LoggedInUser.email, type: LoggedInUser.type }
+                    user: {name: LoggedInUser.name,email: LoggedInUser.email, type: LoggedInUser.type }
                 })
             } else {
                 res.send({ success: false })
@@ -361,6 +362,73 @@ async function run() {
             res.send(result);
         })
 
+
+        // customer
+        app.get('/customer', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = customerCollection.find(query);
+            if (page || size) {
+                customer = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                customer = await cursor.toArray();
+            }
+            res.send(customer);
+        });
+
+        // customerCount
+        app.get('/customerCount', async (req, res) => {
+            const count = await customerCollection.estimatedDocumentCount();
+
+            res.send({ count });
+        })
+
+
+        // get One customer
+        app.get("/customer/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const customer = await customerCollection.findOne(query);
+            res.send(customer);
+        });
+
+
+        // update / put customer
+        app.put('/customer/:id', async (req, res) => {
+            const id = req.params.id;
+            const customer = req.body;
+            const filter = { _id: ObjectId(id) };
+
+            const updatecustomer = {
+                $set: customer
+            }
+
+            const option = { upsert: true };
+
+            const result = await customerCollection.updateOne(filter, updatecustomer, option);
+            res.send(result);
+        })
+
+        // create customer
+        app.post('/customer', async (req, res) => {
+            const customer = req.body;
+            console.log('create new customer', customer);
+            const result = await customerCollection.insertOne(customer);
+            res.send(result.insertedId);
+        })
+
+
+        // delete customer
+        app.delete('/customer/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await customerCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
     }
