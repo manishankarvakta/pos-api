@@ -88,9 +88,18 @@ async function run() {
 
         // login
         app.post('/user/login', async(req, res)=>{
-            const user = req.body;
+            const user = req.body.data;
             console.log('Login request:', user);
-            res.send({success: user});
+            
+            const query = {email: user.email, password: user.password, status: "Active"};
+            
+
+            const LoggedInUser = await userCollection.findOne(query);
+            LoggedInUser ?
+                res.send(LoggedInUser)
+                :
+                res.send({login: false})
+            // res.send({success: user});
         })
 
 
