@@ -3,6 +3,7 @@ const cors = require('cors');
 const sha256 = require('js-sha256').sha256;
 require('dotenv').config();
 const app = express();
+const jwt = require('jsonwebtoken');
 
 // Define port
 const port = process.env.PORT || 5000;
@@ -13,8 +14,27 @@ app.use(cors());
 app.use(express.json());
 
 
+const verifyJWT = (req, res, next)=>{
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(401).send({message: "Unauthorized"})
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode)=>{
+        if(err){
+            return res.status(403).send({message: "Forbidden"})
+        }
+        req.decode = decode;
+        next();
+        
+    })
+}
+
+
 // DATABASE CONNECTION
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { type } = require('express/lib/response');
+const { decode } = require('jsonwebtoken');
 const ObjectId = require('mongodb').ObjectId;
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rfbl8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -47,9 +67,9 @@ async function run() {
         });
 
         // get One User
-        app.get("/user/:id", async(req,res)=>{
+        app.get("/user/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
 
             const user = await userCollection.findOne(query);
             res.send(user);
@@ -57,19 +77,19 @@ async function run() {
 
 
         // update / put user
-        app.put('/user/:id', async(req,res)=>{
+        app.put('/user/:id', async (req, res) => {
             const id = req.params.id;
             const user = req.body;
 
             console.log(id)
             console.log(user)
-            const filter = {_id: ObjectId(id)};
+            const filter = { _id: ObjectId(id) };
 
             const updateUser = {
                 $set: user
             }
-            
-            const option = {upsert:true};
+
+            const option = { upsert: true };
 
             const result = await userCollection.updateOne(filter, updateUser, option);
             res.send(result);
@@ -87,19 +107,25 @@ async function run() {
         })
 
         // login
-        app.post('/user/login', async(req, res)=>{
+        app.post('/user/login', async (req, res) => {
             const user = req.body.data;
             console.log('Login request:', user);
-            
-            const query = {email: user.email, password: user.password, status: "Active"};
-            
+
+            const query = { email: user.email, password: user.password, status: "Active" };
+
 
             const LoggedInUser = await userCollection.findOne(query);
-            LoggedInUser ?
-                res.send(LoggedInUser)
-                :
-                res.send({login: false})
-            // res.send({success: user});
+            if (LoggedInUser) {
+                const accessToken = jwt.sign({ email: LoggedInUser.email, type: LoggedInUser.type }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+                res.send({
+                    success: true,
+                    accessToken: accessToken,
+                    user: {email: LoggedInUser.email, type: LoggedInUser.type }
+                })
+            } else {
+                res.send({ success: false })
+            }
+
         })
 
 
@@ -127,7 +153,7 @@ async function run() {
             const result = await productCollection.insertOne(product);
             res.send(result);
         })
-        
+
 
         /**
          *  R - read 
@@ -136,34 +162,34 @@ async function run() {
         app.get('/product', async (req, res) => {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
-            
+
             const query = {};
             const cursor = productCollection.find(query);
-            if(page || size){
-                product = await cursor.skip(page*size).limit(size).toArray();
+            if (page || size) {
+                product = await cursor.skip(page * size).limit(size).toArray();
             }
-            else{
+            else {
                 product = await cursor.toArray();
             }
             res.send(product);
         });
 
-        app.get('/productCount',async (req,res)=>{
+        app.get('/productCount', async (req, res) => {
             const query = {};
             const cursor = productCollection.find(query);
             const count = await cursor.count();
 
-            res.send({count});
+            res.send({ count });
         })
 
 
-         /**
-         *  R - read 
-         * One product
-         * */
-          app.get("/product/:id", async(req,res)=>{
+        /**
+        *  R - read 
+        * One product
+        * */
+        app.get("/product/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
 
             const product = await productCollection.findOne(query);
             res.send(product);
@@ -171,16 +197,16 @@ async function run() {
 
 
         // U - Update products
-        app.put('/product/:id', async(req,res)=>{
+        app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const product = req.body;
-            const filter = {_id: ObjectId(id)};
+            const filter = { _id: ObjectId(id) };
 
             const updateProduct = {
                 $set: product
             }
-            
-            const option = {upsert:true};
+
+            const option = { upsert: true };
 
             const result = await productCollection.updateOne(filter, updateProduct, option);
             res.send(result);
@@ -211,7 +237,7 @@ async function run() {
             const result = await saleCollection.insertOne(sale);
             res.send(result);
         })
-        
+
 
         /**
          *  R - read 
@@ -224,13 +250,13 @@ async function run() {
             res.send(sale);
         });
 
-         /**
-         *  R - read 
-         * One sale
-         * */
-          app.get("/sale/:id", async(req,res)=>{
+        /**
+        *  R - read 
+        * One sale
+        * */
+        app.get("/sale/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
 
             const sale = await saleCollection.findOne(query);
             res.send(sale);
@@ -238,16 +264,16 @@ async function run() {
 
 
         // U - Update sale
-        app.put('/sale/:id', async(req,res)=>{
+        app.put('/sale/:id', async (req, res) => {
             const id = req.params.id;
             const sale = req.body;
-            const filter = {_id: ObjectId(id)};
+            const filter = { _id: ObjectId(id) };
 
             const updateSale = {
                 $set: sale
             }
-            
-            const option = {upsert:true};
+
+            const option = { upsert: true };
 
             const result = await saleCollection.updateOne(filter, updateSale, option);
             res.send(result);
@@ -268,34 +294,34 @@ async function run() {
          * Master Category
          * Category
          */
-         // get All category
-         app.get('/category', async (req, res) => {
+        // get All category
+        app.get('/category', async (req, res) => {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
-            
+
             const query = {};
             const cursor = categoryCollection.find(query);
-            if(page || size){
-                category = await cursor.skip(page*size).limit(size).toArray();
+            if (page || size) {
+                category = await cursor.skip(page * size).limit(size).toArray();
             }
-            else{
+            else {
                 category = await cursor.toArray();
             }
             res.send(category);
         });
 
         // categoryCount
-        app.get('/categoryCount',async (req,res)=>{
+        app.get('/categoryCount', async (req, res) => {
             const count = await categoryCollection.estimatedDocumentCount();
 
-            res.send({count});
+            res.send({ count });
         })
 
 
         // get One category
-        app.get("/category/:id", async(req,res)=>{
+        app.get("/category/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
 
             const category = await categoryCollection.findOne(query);
             res.send(category);
@@ -303,16 +329,16 @@ async function run() {
 
 
         // update / put category
-        app.put('/category/:id', async(req,res)=>{
+        app.put('/category/:id', async (req, res) => {
             const id = req.params.id;
             const category = req.body;
-            const filter = {_id: ObjectId(id)};
+            const filter = { _id: ObjectId(id) };
 
             const updateCategory = {
                 $set: category
             }
-            
-            const option = {upsert:true};
+
+            const option = { upsert: true };
 
             const result = await categoryCollection.updateOne(filter, updateCategory, option);
             res.send(result);
