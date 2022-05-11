@@ -233,14 +233,16 @@ async function run() {
             }else{
                 query = {$or: [
                     {ean: {$regex: new RegExp('^'+payload+'.*','i')}},
-                    {article_code: {$regex: new RegExp('^'+payload+'.*','i')}}
+                    {article_code: {$regex: new RegExp('^'+payload+'','i')}}
                 ]}
             }
                 
             const cursor = productCollection.find(query);
             const search = await cursor.limit(10).toArray();
             res.send({payload: search})
-            // console.log(isNumber); 
+            console.log(payload); 
+            console.log(search); 
+
         })
 
 
