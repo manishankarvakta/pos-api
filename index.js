@@ -222,6 +222,27 @@ async function run() {
             res.send(result);
         });
 
+        // Product search
+        app.post('/search', async(req, res)=>{
+            let payload = req.body.payload.trim();
+            // check search item num | ean or article code
+            const isNumber = /^\d/.test(payload)
+            let query = {};
+            if(!isNumber){
+                query = {name: {$regex: new RegExp('^'+payload+'.*','i')}};
+            }else{
+                query = {$or: [
+                    {ean: {$regex: new RegExp('^'+payload+'.*','i')}},
+                    {article_code: {$regex: new RegExp('^'+payload+'.*','i')}}
+                ]}
+            }
+                
+            const cursor = productCollection.find(query);
+            const search = await cursor.limit(10).toArray();
+            res.send({payload: search})
+            // console.log(isNumber); 
+        })
+
 
         /**
          * SALES CRUD API
