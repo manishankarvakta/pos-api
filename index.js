@@ -14,19 +14,19 @@ app.use(cors());
 app.use(express.json());
 
 
-const verifyJWT = (req, res, next)=>{
+const verifyJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if(!authHeader){
-        return res.status(401).send({message: "Unauthorized"})
+    if (!authHeader) {
+        return res.status(401).send({ message: "Unauthorized" })
     }
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode)=>{
-        if(err){
-            return res.status(403).send({message: "Forbidden"})
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decode) => {
+        if (err) {
+            return res.status(403).send({ message: "Forbidden" })
         }
         req.decode = decode;
         next();
-        
+
     })
 }
 
@@ -121,7 +121,7 @@ async function run() {
                 res.send({
                     success: true,
                     accessToken: accessToken,
-                    user: {name: LoggedInUser.name,email: LoggedInUser.email, type: LoggedInUser.type }
+                    user: { name: LoggedInUser.name, email: LoggedInUser.email, type: LoggedInUser.type }
                 })
             } else {
                 res.send({ success: false })
@@ -164,6 +164,7 @@ async function run() {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
 
+
             const query = {};
             const cursor = productCollection.find(query);
             if (page || size) {
@@ -174,6 +175,19 @@ async function run() {
             }
             res.send(product);
         });
+
+        // get selected products
+        app.post('/products', async (req, res) => {
+            const productsId = req.body.payload;
+            const query = { article_code: { $in: productsId } };
+            const cursor = productCollection.find(query);
+            console.log(productsId)
+
+            product = await cursor.toArray();
+            res.send(product);
+        })
+
+
 
         app.get('/productCount', async (req, res) => {
             const query = {};
@@ -223,25 +237,26 @@ async function run() {
         });
 
         // Product search
-        app.post('/search', async(req, res)=>{
+        app.post('/search', async (req, res) => {
             let payload = req.body.payload.trim();
             // check search item num | ean or article code
             const isNumber = /^\d/.test(payload)
             let query = {};
-            if(!isNumber){
-                query = {name: {$regex: new RegExp('^'+payload+'.*','i')}};
-            }else{
-                query = {$or: [
-                    {ean: {$regex: new RegExp('^'+payload+'.*','i')}},
-                    {article_code: {$regex: new RegExp('^'+payload+'','i')}}
-                ]}
+            if (!isNumber) {
+                query = { name: { $regex: new RegExp('^' + payload + '.*', 'i') } };
+            } else {
+                query = {
+                    $or: [
+                        { ean: { $regex: new RegExp('^' + payload + '.*', 'i') } },
+                        { article_code: { $regex: new RegExp('^' + payload + '.*', 'i') } }
+                    ]
+                }
             }
-                
+
             const cursor = productCollection.find(query);
-            const search = await cursor.limit(10).toArray();
-            res.send({payload: search})
-            console.log(payload); 
-            console.log(search); 
+            const search = await cursor.limit(15).toArray();
+            res.send({ payload: search })
+            console.log(payload);
 
         })
 
