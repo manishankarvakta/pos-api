@@ -228,6 +228,46 @@ async function run() {
         });
 
 
+        // Import Product
+        app.post('/product/import', async (req,res) => {
+            const products = req.body;
+            let productName = [];
+
+            const result = await productCollection.bulkWrite(products.map(point => {
+                console.log(point)
+                    return {
+                        updateOne: {
+                            filter: {
+                                article_code: point.article_code
+                            },
+                            update: {
+                                $set: point
+                                
+                            },
+                            upsert: true,
+                        }
+                    };
+                }));
+            // products.map(async product => {
+            //     // if (product.article_code) {
+
+            //         const filter = { article_code: product.article_code };
+            //         const option = { upsert: true };
+            //         const result = await productCollection.updateOne(filter, {$set: product}, option);
+            //         // const result = await productCollection. .bulkWrite([SOME_ARRAY_SIMILAR_TO_ABOVE_EXAMPLE], {
+            //         //     ordered: false
+            //         // });
+
+            //     //     if(result){
+            //             productName.push(product.name)
+            //             console.log(product.name)
+            //         // }
+            //     // }
+            // })
+            res.send(result);
+        })
+
+
         // delete product
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
