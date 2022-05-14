@@ -536,13 +536,13 @@ async function run() {
             const supplier = req.body;
             const filter = { _id: ObjectId(id) };
 
-            const updatesupplier = {
+            const updateSupplier = {
                 $set: supplier
             }
 
             const option = { upsert: true };
 
-            const result = await supplierCollection.updateOne(filter, updatesupplier, option);
+            const result = await supplierCollection.updateOne(filter, updateSupplier, option);
             res.send(result);
         })
 
@@ -563,6 +563,31 @@ async function run() {
             res.send(result);
         })
 
+
+        // Import Product
+        app.post('/supplier/import', async (req,res) => {
+            const suppliers = req.body;
+
+            // res.send(suppliers)
+
+            const result = await supplierCollection.bulkWrite(suppliers.map(supplier => {
+                console.log(supplier?.code)
+                    return {
+                        updateOne: {
+                            filter: {
+                                code: supplier?.code
+                            },
+                            update: {
+                                $set: supplier
+                                
+                            },
+                            upsert: true,
+                        }
+                    };
+                }));
+            
+            res.send(result);
+        })
 
     }
     finally {
