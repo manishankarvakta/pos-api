@@ -11,8 +11,9 @@ const port = process.env.PORT || 5000;
 
 // MiddleWare
 app.use(cors());
-app.use(express.json());
 
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb', extended: true }));
 
 const verifyJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -58,6 +59,7 @@ async function run() {
         const saleCollection = posDB.collection('sales');
         const categoryCollection = posDB.collection('categories');
         const customerCollection = posDB.collection('customer');
+        const supplierCollection = posDB.collection('supplier');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -248,22 +250,7 @@ async function run() {
                         }
                     };
                 }));
-            // products.map(async product => {
-            //     // if (product.article_code) {
-
-            //         const filter = { article_code: product.article_code };
-            //         const option = { upsert: true };
-            //         const result = await productCollection.updateOne(filter, {$set: product}, option);
-            //         // const result = await productCollection. .bulkWrite([SOME_ARRAY_SIMILAR_TO_ABOVE_EXAMPLE], {
-            //         //     ordered: false
-            //         // });
-
-            //     //     if(result){
-            //             productName.push(product.name)
-            //             console.log(product.name)
-            //         // }
-            //     // }
-            // })
+            
             res.send(result);
         })
 
@@ -505,6 +492,74 @@ async function run() {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await customerCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+        // supplier
+        app.get('/supplier', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = supplierCollection.find(query);
+            if (page || size) {
+                supplier = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                supplier = await cursor.toArray();
+            }
+            res.send(supplier);
+        });
+
+        // supplierCount
+        app.get('/supplierCount', async (req, res) => {
+            const count = await supplierCollection.estimatedDocumentCount();
+
+            res.send({ count });
+        })
+
+
+        // get One supplier
+        app.get("/supplier/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const supplier = await supplierCollection.findOne(query);
+            res.send(supplier);
+        });
+
+
+        // update / put supplier
+        app.put('/supplier/:id', async (req, res) => {
+            const id = req.params.id;
+            const supplier = req.body;
+            const filter = { _id: ObjectId(id) };
+
+            const updatesupplier = {
+                $set: supplier
+            }
+
+            const option = { upsert: true };
+
+            const result = await supplierCollection.updateOne(filter, updatesupplier, option);
+            res.send(result);
+        })
+
+        // create supplier
+        app.post('/supplier', async (req, res) => {
+            const supplier = req.body;
+            console.log('create new supplier', supplier);
+            const result = await supplierCollection.insertOne(supplier);
+            res.send(result.insertedId);
+        })
+
+
+        // delete supplier
+        app.delete('/supplier/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await supplierCollection.deleteOne(query);
             res.send(result);
         })
 
