@@ -298,8 +298,14 @@ async function run() {
 
             const cursor = productCollection.find(query, {name:1,ean:1,article_code:1});
             const search = await cursor.limit(10).toArray();
-            res.send({ payload: search })
-            console.log(payload);
+            if(payload === ""){
+                res.send({ payload: [] })
+            }else{
+                res.send({ payload: search })
+            }
+
+
+            // console.log(search);
 
         })
 
