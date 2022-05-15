@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const sha256 = require('js-sha256').sha256;
+// const sha256 = require('js-sha256').sha256;
 require('dotenv').config();
 const app = express();
 const jwt = require('jsonwebtoken');
@@ -60,6 +60,8 @@ async function run() {
         const categoryCollection = posDB.collection('categories');
         const customerCollection = posDB.collection('customer');
         const supplierCollection = posDB.collection('supplier');
+        const purchaseCollection = posDB.collection('purchase');
+        const inventoryCollection = posDB.collection('inventory');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -84,8 +86,8 @@ async function run() {
             const id = req.params.id;
             const user = req.body;
 
-            console.log(id)
-            console.log(user)
+            // console.log(id)
+            // console.log(user)
             const filter = { _id: ObjectId(id) };
 
             const updateUser = {
@@ -212,6 +214,7 @@ async function run() {
             res.send(product);
         });
 
+        
 
         // U - Update products
         app.put('/product/:id', async (req, res) => {
@@ -588,6 +591,164 @@ async function run() {
             
             res.send(result);
         })
+
+
+
+
+        // PURCHASE
+        // purchase
+        app.get('/purchase', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = purchaseCollection.find(query);
+            if (page || size) {
+                purchase = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                purchase = await cursor.toArray();
+            }
+            res.send(purchase);
+        });
+
+        // purchaseCount
+        app.get('/purchaseCount', async (req, res) => {
+            const count = await purchaseCollection.estimatedDocumentCount();
+
+            res.send({ count });
+        })
+
+
+        // get One purchase
+        app.get("/purchase/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const purchase = await purchaseCollection.findOne(query);
+            res.send(purchase);
+        });
+
+
+        // update / put purchase
+        app.put('/purchase/:id', async (req, res) => {
+            const id = req.params.id;
+            const purchase = req.body;
+            const filter = { _id: ObjectId(id) };
+
+            const updatePurchase = {
+                $set: purchase
+            }
+
+            const option = { upsert: true };
+
+            const result = await purchaseCollection.updateOne(filter, updatePurchase, option);
+            res.send(result);
+        })
+
+        // create purchase
+        app.post('/purchase', async (req, res) => {
+            const purchase = req.body;
+            console.log('create new purchase', purchase);
+            const result = await purchaseCollection.insertOne(purchase);
+            res.send(result.insertedId);
+        })
+
+
+        // delete purchase
+        app.delete('/purchase/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await purchaseCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+        // INVENTORY
+        // get inventory by article code
+        // by article_code
+        app.get("/inventory-by-code/:code", async (req, res) => {
+            const code = req.params.code;
+            const query = { article_code: code };
+            
+
+            const productInventory = await inventoryCollection.findOne(query);
+            if(productInventory){
+                res.send(productInventory);
+            }else{
+                res.send({success: false});
+            }
+        });
+
+
+        // inventory
+        app.get('/inventory', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = inventoryCollection.find(query);
+            if (page || size) {
+                inventory = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                inventory = await cursor.toArray();
+            }
+            res.send(inventory);
+        });
+
+        // inventoryCount
+        app.get('/inventoryCount', async (req, res) => {
+            const count = await inventoryCollection.estimatedDocumentCount();
+
+            res.send({ count });
+        })
+
+
+        // get One inventory
+        app.get("/inventory/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const inventory = await inventoryCollection.findOne(query);
+            res.send(inventory);
+        });
+
+
+        // update / put inventory
+        app.put('/inventory/:id', async (req, res) => {
+            const id = req.params.id;
+            const inventory = req.body;
+            const filter = { _id: ObjectId(id) };
+
+            const updateinventory = {
+                $set: inventory
+            }
+
+            const option = { upsert: true };
+
+            const result = await inventoryCollection.updateOne(filter, updateinventory, option);
+            res.send(result);
+        })
+
+        // create inventory
+        app.post('/inventory', async (req, res) => {
+            const inventory = req.body;
+            console.log('create new inventory', inventory);
+            const result = await inventoryCollection.insertOne(inventory);
+            res.send(result.insertedId);
+        })
+
+
+        // delete inventory
+        app.delete('/inventory/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await inventoryCollection.deleteOne(query);
+            res.send(result);
+        })
+
 
     }
     finally {
