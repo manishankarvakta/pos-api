@@ -172,7 +172,7 @@ async function run() {
 
 
             const query = {};
-            const cursor = productCollection.find(query);
+            const cursor = productCollection.find(query, {article_code:1, name:1, ean:1,master_category:1, unit:1, cost:1, price:1});
             if (page || size) {
                 product = await cursor.skip(page * size).limit(size).toArray();
             }
@@ -187,12 +187,13 @@ async function run() {
         app.post('/products', async (req, res) => {
             const productsId = req.body.payload;
             const query = { article_code: { $in: productsId } };
-            const cursor = productCollection.find(query, {article_code:1, name:1, ean:1,master_category:1, unit:1, cost:1, price:1});
+            const cursor = productCollection.find(query, {article_code:1, name:1, unit:1, cost:1, price:1});
             // console.log(productsId)
 
             product = await cursor.toArray();
             res.send(product);
         })
+        
 
 
 
@@ -296,7 +297,7 @@ async function run() {
             }
 
             const cursor = productCollection.find(query, {name:1,ean:1,article_code:1});
-            const search = await cursor.limit(15).toArray();
+            const search = await cursor.limit(10).toArray();
             res.send({ payload: search })
             console.log(payload);
 
