@@ -38,6 +38,8 @@ const { type } = require('express/lib/response');
 const { decode } = require('jsonwebtoken');
 const ObjectId = require('mongodb').ObjectId;
 
+// const uri =  `mongodb+srv://${process.env.DB_LIVE_USER}:${process.env.DB_LIVE_PASS}@cluster0.tpwgs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rfbl8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -179,13 +181,14 @@ async function run() {
             }
             res.send(product);
         });
+       
 
         // get selected products
         app.post('/products', async (req, res) => {
             const productsId = req.body.payload;
             const query = { article_code: { $in: productsId } };
-            const cursor = productCollection.find(query);
-            console.log(productsId)
+            const cursor = productCollection.find(query, {article_code:1, name:1, ean:1,master_category:1, unit:1, cost:1, price:1});
+            // console.log(productsId)
 
             product = await cursor.toArray();
             res.send(product);
@@ -213,6 +216,14 @@ async function run() {
             const product = await productCollection.findOne(query);
             res.send(product);
         });
+        // by article code
+        // app.get("/product-name/:id", async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { article_code:id };
+
+        //     const product = await productCollection.findOne(query);
+        //     res.send(product);
+        // });
 
         
 
@@ -220,6 +231,7 @@ async function run() {
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const product = req.body;
+            console.log(product)
             const filter = { _id: ObjectId(id) };
 
             const updateProduct = {
@@ -283,7 +295,7 @@ async function run() {
                 }
             }
 
-            const cursor = productCollection.find(query);
+            const cursor = productCollection.find(query, {name:1,ean:1,article_code:1});
             const search = await cursor.limit(15).toArray();
             res.send({ payload: search })
             console.log(payload);
