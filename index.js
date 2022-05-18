@@ -185,12 +185,13 @@ async function run() {
 
         // get selected products
         app.post('/products', async (req, res) => {
-            const productsId = req.body.payload;
+            const productsId = req.body.data;
             const query = { article_code: { $in: productsId } };
-            const cursor = productCollection.find(query, {article_code:1, name:1, unit:1, cost:1, price:1});
-            // console.log(productsId)
-
+            const cursor = productCollection.find(query,{article_code:1, name:1, unit:1, cost:1, price:1});
+            // {article_code:1, name:1, unit:1, cost:1, price:1}
             product = await cursor.toArray();
+            // console.log(productsId)
+            // console.log(product)
             res.send(product);
         })
         
@@ -280,28 +281,33 @@ async function run() {
         });
 
         // Product search
-        app.post('/search', async (req, res) => {
-            let payload = req.body.payload.trim();
+        app.get('/search/:q', async (req, res) => {
+            let payload = req.params.q.trim().toString().toLocaleLowerCase();
+
+            // res.send(payload)
             // check search item num | ean or article code
             const isNumber = /^\d/.test(payload)
             let query = {};
             if (!isNumber) {
                 query = { name: { $regex: new RegExp('^' + payload + '.*', 'i') } };
+                // query = { name:  payload  };
             } else {
                 query = {
                     $or: [
+                        // { ean: payload   },
+                        // { article_code:  payload }
                         { ean: { $regex: new RegExp('^' + payload + '.*', 'i') } },
                         { article_code: { $regex: new RegExp('^' + payload + '.*', 'i') } }
                     ]
                 }
             }
 
-            const cursor = productCollection.find(query, {name:1,ean:1,article_code:1});
+            const cursor = productCollection.find(query);
             const search = await cursor.limit(10).toArray();
             if(payload === ""){
-                res.send({ payload: [] })
+                res.send([])
             }else{
-                res.send({ payload: search })
+                res.send({ search })
             }
 
 
