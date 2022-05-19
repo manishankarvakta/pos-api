@@ -167,7 +167,7 @@ async function run() {
          * All products
          * */
         app.get('/product', async (req, res) => {
-            const page = parseInt(req.query.page);
+            const page = parseInt(req.query.page); 
             const size = parseInt(req.query.size);
 
 
