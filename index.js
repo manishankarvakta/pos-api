@@ -12,8 +12,8 @@ const port = process.env.PORT || 5000;
 // MiddleWare
 app.use(cors());
 
-app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({limit: '50mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const verifyJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -167,12 +167,12 @@ async function run() {
          * All products
          * */
         app.get('/product', async (req, res) => {
-            const page = parseInt(req.query.page); 
+            const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
 
 
             const query = {};
-            const cursor = productCollection.find(query, {article_code:1, name:1, ean:1,master_category:1, unit:1, cost:1, price:1});
+            const cursor = productCollection.find(query, { article_code: 1, name: 1, ean: 1, master_category: 1, unit: 1, cost: 1, price: 1 });
             if (page || size) {
                 product = await cursor.skip(page * size).limit(size).toArray();
             }
@@ -181,20 +181,20 @@ async function run() {
             }
             res.send(product);
         });
-       
+
 
         // get selected products
         app.post('/products', async (req, res) => {
             const productsId = req.body.data;
             const query = { article_code: { $in: productsId } };
-            const cursor = productCollection.find(query,{article_code:1, name:1, unit:1, cost:1, price:1});
+            const cursor = productCollection.find(query, { article_code: 1, name: 1, unit: 1, cost: 1, price: 1 });
             // {article_code:1, name:1, unit:1, cost:1, price:1}
             product = await cursor.toArray();
             // console.log(productsId)
             // console.log(product)
             res.send(product);
         })
-        
+
 
 
 
@@ -219,15 +219,15 @@ async function run() {
             res.send(product);
         });
         // by article code
-        // app.get("/product-name/:id", async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { article_code:id };
+        app.get("/productbycode/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { article_code: id };
 
-        //     const product = await productCollection.findOne(query);
-        //     res.send(product);
-        // });
+            const product = await productCollection.findOne(query);
+            res.send(product);
+        });
 
-        
+
 
         // U - Update products
         app.put('/product/:id', async (req, res) => {
@@ -248,26 +248,26 @@ async function run() {
 
 
         // Import Product
-        app.post('/product/import', async (req,res) => {
+        app.post('/product/import', async (req, res) => {
             const products = req.body;
             let productName = [];
 
             const result = await productCollection.bulkWrite(products.map(point => {
                 console.log(point)
-                    return {
-                        updateOne: {
-                            filter: {
-                                article_code: point.article_code
-                            },
-                            update: {
-                                $set: point
-                                
-                            },
-                            upsert: true,
-                        }
-                    };
-                }));
-            
+                return {
+                    updateOne: {
+                        filter: {
+                            article_code: point.article_code
+                        },
+                        update: {
+                            $set: point
+
+                        },
+                        upsert: true,
+                    }
+                };
+            }));
+
             res.send(result);
         })
 
@@ -304,9 +304,9 @@ async function run() {
 
             const cursor = productCollection.find(query);
             const search = await cursor.limit(10).toArray();
-            if(payload === ""){
+            if (payload === "") {
                 res.send([])
-            }else{
+            } else {
                 res.send({ search })
             }
 
@@ -381,6 +381,32 @@ async function run() {
             const result = await saleCollection.deleteOne(query);
             res.send(result);
         });
+
+        // get sale total
+        app.get('/sale-total', async (req, res) => {
+            const dateTo = req.body.dateTo;
+            const dateFrom = req.body.dateFrom;
+            let query = {};
+
+            if (dateTo) {
+                query = {
+                    date: ISODate(dateFrom)
+                };
+            }else if(dateTo && dateFrom){
+                query = {
+                    date: {
+                        $gte: ISODate(dateFrom),
+                        $lt: ISODate(dateTo)
+                    }
+                };
+            }else{
+                query = {};
+            }
+
+
+            const cursor = saleCollection.find(query);
+            const sale = await cursor.toArray();
+        })
 
 
 
@@ -593,27 +619,27 @@ async function run() {
 
 
         // Import Product
-        app.post('/supplier/import', async (req,res) => {
+        app.post('/supplier/import', async (req, res) => {
             const suppliers = req.body;
 
             // res.send(suppliers)
 
             const result = await supplierCollection.bulkWrite(suppliers.map(supplier => {
                 console.log(supplier?.code)
-                    return {
-                        updateOne: {
-                            filter: {
-                                code: supplier?.code
-                            },
-                            update: {
-                                $set: supplier
-                                
-                            },
-                            upsert: true,
-                        }
-                    };
-                }));
-            
+                return {
+                    updateOne: {
+                        filter: {
+                            code: supplier?.code
+                        },
+                        update: {
+                            $set: supplier
+
+                        },
+                        upsert: true,
+                    }
+                };
+            }));
+
             res.send(result);
         })
 
@@ -696,13 +722,13 @@ async function run() {
         app.get("/inventory-by-code/:code", async (req, res) => {
             const code = req.params.code;
             const query = { article_code: code };
-            
+
 
             const productInventory = await inventoryCollection.findOne(query);
-            if(productInventory){
+            if (productInventory) {
                 res.send(productInventory);
-            }else{
-                res.send({success: false});
+            } else {
+                res.send({ success: false });
             }
         });
 
