@@ -700,7 +700,7 @@ async function run() {
         // create purchase
         app.post('/purchase', async (req, res) => {
             const purchase = req.body;
-            console.log('create new purchase', purchase);
+            // console.log('create new purchase', purchase);
             const result = await purchaseCollection.insertOne(purchase);
             res.send(result.insertedId);
         })
