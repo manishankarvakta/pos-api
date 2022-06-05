@@ -583,6 +583,15 @@ async function run() {
             res.send(supplier);
         });
 
+        // get One supplier by code
+        app.get("/supplier-by-code/:code", async (req, res) => {
+            const code = req.params.code;
+            const query = { code: code };
+
+            const supplier = await supplierCollection.findOne(query);
+            res.send(supplier);
+        });
+
 
         // update / put supplier
         app.put('/supplier/:id', async (req, res) => {
