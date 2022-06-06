@@ -64,6 +64,7 @@ async function run() {
         const supplierCollection = posDB.collection('supplier');
         const purchaseCollection = posDB.collection('purchase');
         const inventoryCollection = posDB.collection('inventory');
+        const grnCollection = posDB.collection('grn');
 
         // get user
         app.get('/user', async (req, res) => {
@@ -694,6 +695,7 @@ async function run() {
         app.put('/purchase/:id', async (req, res) => {
             const id = req.params.id;
             const purchase = req.body;
+            console.log(purchase)
             const filter = { _id: ObjectId(id) };
 
             const updatePurchase = {
@@ -720,6 +722,76 @@ async function run() {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await purchaseCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+        // GRN
+        // grn
+        app.get('/grn', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = grnCollection.find(query);
+            if (page || size) {
+                grn = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                grn = await cursor.toArray();
+            }
+            res.send(grn);
+        });
+
+        // grnCount
+        app.get('/grnCount', async (req, res) => {
+            const count = await grnCollection.estimatedDocumentCount();
+
+            res.send({ count });
+        })
+
+
+        // get One grn
+        app.get("/grn/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const grn = await grnCollection.findOne(query);
+            res.send(grn);
+        });
+
+
+        // update / put grn
+        app.put('/grn/:id', async (req, res) => {
+            const id = req.params.id;
+            const grn = req.body;
+            const filter = { _id: ObjectId(id) };
+
+            const updateGrn = {
+                $set: grn
+            }
+
+            const option = { upsert: true };
+
+            const result = await grnCollection.updateOne(filter, updateGrn, option);
+            res.send(result);
+        })
+
+        // create grn
+        app.post('/grn', async (req, res) => {
+            const grn = req.body;
+            // console.log('create new grn', grn);
+            const result = await grnCollection.insertOne(grn);
+            res.send(result.insertedId);
+        })
+
+
+        // delete grn
+        app.delete('/grn/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await grnCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -782,13 +854,13 @@ async function run() {
             const inventory = req.body;
             const filter = { _id: ObjectId(id) };
 
-            const updateinventory = {
+            const updateInventory = {
                 $set: inventory
             }
 
             const option = { upsert: true };
 
-            const result = await inventoryCollection.updateOne(filter, updateinventory, option);
+            const result = await inventoryCollection.updateOne(filter, updateInventory, option);
             res.send(result);
         })
 
