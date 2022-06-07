@@ -459,7 +459,7 @@ async function run() {
     });
 
     // get One category by mc id
-    app.get("/category/:mcId", async (req, res) => {
+    app.get("/mc-category/:mcId", async (req, res) => {
       const id = req.params.mcId;
       const query = { mcId: mcId, parent: "" };
 
