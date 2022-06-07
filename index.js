@@ -65,6 +65,8 @@ async function run() {
         const purchaseCollection = posDB.collection('purchase');
         const inventoryCollection = posDB.collection('inventory');
         const grnCollection = posDB.collection('grn');
+        const inventoryCountCollection = posDB.collection('inventoryCount');
+
 
         // get user
         app.get('/user', async (req, res) => {
@@ -393,14 +395,14 @@ async function run() {
                 query = {
                     date: ISODate(dateFrom)
                 };
-            }else if(dateTo && dateFrom){
+            } else if (dateTo && dateFrom) {
                 query = {
                     date: {
                         $gte: ISODate(dateFrom),
                         $lt: ISODate(dateTo)
                     }
                 };
-            }else{
+            } else {
                 query = {};
             }
 
@@ -804,7 +806,6 @@ async function run() {
             const code = req.params.code;
             const query = { article_code: code };
 
-
             const productInventory = await inventoryCollection.findOne(query);
             if (productInventory) {
                 res.send(productInventory);
@@ -881,6 +882,90 @@ async function run() {
             res.send(result);
         })
 
+
+        // Inventory count
+
+        // by article_code
+        app.get("/inventory-count-by/:code", async (req, res) => {
+            const code = req.params.code;
+            const query = { article_code: code };
+            
+            const productInventory = await inventoryCountCollection.findOne(query);
+            if (productInventory) {
+                res.send({ article: productInventory, success: true });
+            } else {
+                res.send({ success: false });
+            }
+        });
+       
+
+        // inventory
+        app.get('/inventory-count', async (req, res) => {
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
+            const query = {};
+            const cursor = inventoryCountCollection.find(query);
+            if (page || size) {
+                inventoryCount = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                inventoryCount = await cursor.toArray();
+            }
+            res.send(inventoryCount);
+        });
+
+        // // inventoryCount
+        // app.get('/inventoryCount', async (req, res) => {
+        //     const count = await inventoryCollection.estimatedDocumentCount();
+
+        //     res.send({ count });
+        // })
+
+
+        // get One inventory
+        app.get("/inventory-count/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+
+            const inventoryCount = await inventoryCountCollection.findOne(query);
+            res.send(inventoryCount);
+        });
+
+
+        // update / put inventory
+        app.put('/inventory-count/:id', async (req, res) => {
+            const id = req.params.id;
+            const inventory = req.body;
+            const filter = { article_code: id };
+
+            const updateInventory = {
+                $set: inventory
+            }
+
+            const option = { upsert: true };
+
+            const result = await inventoryCountCollection.updateOne(filter, updateInventory, option);
+            res.send(result);
+        })
+
+        // create inventory
+        app.post('/inventory-count', async (req, res) => {
+            const inventoryCount = req.body;
+            console.log('create new inventory', inventoryCount);
+            inventoryCollection.createIndex({ "article_code": 1 }, { unique: true })
+            const result = await inventoryCountCollection.insertOne(inventoryCount);
+            res.send(result.insertedId);
+        })
+
+
+        // delete inventory
+        app.delete('/inventory-count/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await inventoryCountCollection.deleteOne(query);
+            res.send(result);
+        })
 
     }
     finally {
